@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ollama Model Interface</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      h2 {
+        color: #444;
+        margin-top: 30px;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+      }
+      .container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      textarea {
+        width: 100%;
+        height: 150px;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        font-size: 16px;
+        resize: vertical;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      select, button {
+        padding: 10px 15px;
+        font-size: 16px;
+        border-radius: 4px;
+      }
+      select {
+        flex-grow: 1;
+        border: 1px solid #ddd;
+      }
+      button {
+        background-color: #4a6cf7;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      button:hover {
+        background-color: #3a5ce5;
+      }
+      button:disabled {
+        background-color: #a0a0a0;
+        cursor: not-allowed;
+      }
+      button.clear-btn {
+        background-color: #f44336;
+      }
+      button.clear-btn:hover {
+        background-color: #d32f2f;
+      }
+      .response-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .response-header h3 {
+        margin: 0;
+        color: #333;
+      }
+      .response-container {
+        margin-top: 20px;
+      }
+      .response {
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+        border-left: 4px solid #4a6cf7;
+        min-height: 100px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        line-height: 1.5;
+      }
+      .streaming-response {
+        white-space: pre-wrap;
+      }
+      .status-indicator {
+        font-size: 14px;
+        color: #666;
+        margin-top: 5px;
+      }
+      .status-indicator.connected {
+        color: #4caf50;
+      }
+      .status-indicator.disconnected {
+        color: #f44336;
+      }
+      .task-apps {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+      }
+      .task-app {
+        background-color: #f9f9f9;
+        border-radius: 6px;
+        padding: 15px;
+        text-align: center;
+        border: 1px solid #eaeaea;
+        transition: all 0.3s ease;
+      }
+      .task-app:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+      .task-app h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      .task-app p {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 15px;
+        height: 40px;
+      }
+      .task-app button {
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+      }
+      .loading-spinner {
+        display: inline-block;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Ollama Model Interface</h1>
+      
+      <textarea id="userInput" placeholder="Enter your prompt here..."></textarea>
+      
+      <div class="controls">
+        <select id="modelSelect">
+          <option value="llama2">llama2</option>
+        </select>
+        <button id="sendButton">Send</button>
+        <button id="clearButton" class="clear-btn">Clear</button>
+      </div>
+      
+      <div class="response-container" id="response-container">
+        <div class="response-header">
+          <h3>Response</h3>
+          <div id="status-indicator" class="status-indicator">Checking connection...</div>
+        </div>
+        <div class="response" id="responseArea">
+          <p>Response will appear here...</p>
+        </div>
+      </div>
+      
+      <h2>Task-Specific Applications</h2>
+      <div class="task-apps">
+        <div class="task-app">
+          <h4>Text Summarizer</h4>
+          <p>Condense long texts into concise summaries</p>
+          <button onclick="loadTaskApp('summarizer')">Open Summarizer</button>
+        </div>
+        
+        <div class="task-app">
+          <h4>Code Generator</h4>
+          <p>Generate code snippets from descriptions</p>
+          <button onclick="loadTaskApp('codeGenerator')">Open Code Generator</button>
+        </div>
+        
+        <div class="task-app">
+          <h4>Question Answering</h4>
+          <p>Get answers to your questions</p>
+          <button onclick="loadTaskApp('questionAnswering')">Open Q&A</button>
+        </div>
+        
+        <div class="task-app">
+          <h4>Creative Writer</h4>
+          <p>Generate creative stories and content</p>
+          <button onclick="loadTaskApp('creativeWriter')">Open Writer</button>
+        </div>
+        
+        <div class="task-app">
+          <h4>Translation</h4>
+          <p>Translate text between languages</p>
+          <button onclick="loadTaskApp('translator')">Open Translator</button>
+        </div>
+        
+        <div class="task-app">
+          <h4>Data Analyzer</h4>
+          <p>Analyze and extract insights from data</p>
+          <button onclick="loadTaskApp('dataAnalyzer')">Open Analyzer</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
