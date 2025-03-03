@@ -163,6 +163,34 @@
         width: 100%;
         box-sizing: border-box;
       }
+      .copy-options {
+        display: none;
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1000;
+      }
+      .copy-options button {
+        display: block;
+        width: 100%;
+        padding: 8px 15px;
+        text-align: left;
+        background: none;
+        border: none;
+        color: #333;
+        cursor: pointer;
+      }
+      .copy-options button:hover {
+        background-color: #f5f5f5;
+      }
+      #copyButton {
+        background-color: #4a6cf7;
+      }
+      #copyButton:hover {
+        background-color: #3a5ce5;
+      }
     </style>
   </head>
   <body>
@@ -185,6 +213,12 @@
       <div class="controls">
         <button id="sendButton">Send</button>
         <button id="clearButton" class="clear-btn">Clear</button>
+        <button id="copyButton">Copy</button>
+      </div>
+      
+      <div id="copyOptions" class="copy-options">
+        <button id="copyLastResponse">Copy Last Response</button>
+        <button id="copyEntireChat">Copy Entire Chat</button>
       </div>
       
       <h2>Task-Specific Applications</h2>

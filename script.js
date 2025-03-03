@@ -37,6 +37,10 @@ function cacheElements() {
     responseArea: document.getElementById('responseArea'),
     sendButton: document.getElementById('sendButton'),
     clearButton: document.getElementById('clearButton'),
+    copyButton: document.getElementById('copyButton'),
+    copyOptions: document.getElementById('copyOptions'),
+    copyLastResponse: document.getElementById('copyLastResponse'),
+    copyEntireChat: document.getElementById('copyEntireChat'),
     responseContainer: document.getElementById('response-container')
   };
 }
@@ -56,6 +60,18 @@ function setupEventListeners() {
   
   // Send button functionality
   elements.sendButton.addEventListener('click', sendToOllama);
+  
+  // Copy button functionality
+  elements.copyButton.addEventListener('click', showCopyOptions);
+  elements.copyLastResponse.addEventListener('click', () => copyContent('last'));
+  elements.copyEntireChat.addEventListener('click', () => copyContent('all'));
+  
+  // Close copy options when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.matches('#copyButton') && !e.target.closest('#copyOptions')) {
+      elements.copyOptions.style.display = 'none';
+    }
+  });
 }
 
 // Initialize the application
@@ -408,4 +424,66 @@ function loadTaskApp(appType) {
   if (placeholderStart !== -1 && placeholderEnd !== -1) {
     elements.userInput.setSelectionRange(placeholderStart, placeholderEnd);
   }
+}
+
+function showCopyOptions(event) {
+  const button = event.target;
+  const options = elements.copyOptions;
+  const rect = button.getBoundingClientRect();
+  
+  options.style.display = 'block';
+  options.style.top = `${rect.bottom + window.scrollY + 5}px`;
+  options.style.left = `${rect.left + window.scrollX}px`;
+}
+
+function copyContent(type) {
+  let textToCopy = '';
+  const messages = elements.responseArea.children;
+  
+  if (type === 'last') {
+    // Find the last assistant message
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].textContent.startsWith('Assistant:')) {
+        textToCopy = messages[i].textContent;
+        break;
+      }
+    }
+  } else if (type === 'all') {
+    // Copy all messages
+    textToCopy = Array.from(messages)
+      .map(msg => msg.textContent)
+      .filter(text => text !== 'Response will appear here...')
+      .join('\n\n');
+  }
+  
+  if (textToCopy) {
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        elements.copyOptions.style.display = 'none';
+        showCopySuccess();
+      })
+      .catch(err => {
+        console.error('Failed to copy text:', err);
+        showError('Failed to copy text', 'error');
+      });
+  }
+}
+
+function showCopySuccess() {
+  const notification = document.createElement('div');
+  notification.textContent = 'Copied to clipboard!';
+  notification.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    z-index: 1000;
+    animation: fadeOut 2s forwards;
+  `;
+  
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 2000);
 }
