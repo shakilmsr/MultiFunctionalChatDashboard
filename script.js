@@ -2,7 +2,8 @@
 const API_BASE_URL = 'http://127.0.0.1:11434/api';
 const API_ENDPOINTS = {
   models: `${API_BASE_URL}/tags`,
-  chat: `${API_BASE_URL}/chat`
+  chat: `${API_BASE_URL}/chat`,
+  generate: `${API_BASE_URL}/generate`
 };
 
 // DOM Elements
@@ -184,41 +185,41 @@ function clearAll() {
 
 // Function to send user input to Ollama
 async function sendToOllama() {
-  const userInput = elements.userInput.value;
+  const userInput = elements.userInput.value.trim();
   const selectedModel = elements.modelSelect.value;
   
-  // Log the input and selected model to console
-  console.log('User Input:', userInput);
-  console.log('Selected Model:', selectedModel);
-  
-  // Check if input is empty
-  if (!userInput.trim()) {
+  if (!userInput) {
     showError('Please enter a prompt before sending.', 'warning');
     return;
   }
   
-  // Check if connected to Ollama
   if (!state.isConnected) {
-    // Try to reconnect
     const reconnected = await checkOllamaConnection();
     if (!reconnected) {
-      showError('Cannot connect to Ollama. Please make sure Ollama is running.', 'error');
+      showError('Cannot connect to Ollama. Please make sure Ollama is running.');
       return;
     }
   }
   
+  // Clear input immediately after sending
+  elements.userInput.value = '';
+  
   // Update UI to generating state
   updateUIState('generating');
   
-  // Prepare the request body according to Ollama's API format
+  // Add user's message to response area
+  const userMessage = document.createElement('div');
+  userMessage.className = 'user-message';
+  userMessage.textContent = `You: ${userInput}`;
+  elements.responseArea.appendChild(userMessage);
+  
+  // Scroll to the bottom
+  elements.responseArea.scrollTop = elements.responseArea.scrollHeight;
+  
+  // Prepare the request body
   const requestBody = {
     model: selectedModel,
-    messages: [
-      {
-        role: "user",
-        content: userInput
-      }
-    ],
+    prompt: userInput,
     stream: true
   };
   
@@ -229,17 +230,17 @@ async function sendToOllama() {
   } finally {
     // Reset UI state
     updateUIState('idle');
+    // Ensure we're scrolled to the bottom
+    elements.responseArea.scrollTop = elements.responseArea.scrollHeight;
   }
 }
 
 // Stream the response from Ollama API
 async function streamResponse(requestBody) {
+  let fullResponse = '';
+  
   try {
-    console.log('Sending request to:', API_ENDPOINTS.chat);
-    console.log('Request body:', JSON.stringify(requestBody));
-    
-    // Send POST request to Ollama API
-    const response = await fetch(API_ENDPOINTS.chat, {
+    const response = await fetch(API_ENDPOINTS.generate, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -248,22 +249,21 @@ async function streamResponse(requestBody) {
     });
     
     if (!response.ok) {
-      console.error('Response not OK:', response.status, response.statusText);
-      const errorText = await response.text();
-      console.error('Error response:', errorText);
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     
-    // Prepare for streaming response
+    // Create response element
+    const responseElement = document.createElement('div');
+    responseElement.className = 'assistant-message';
+    responseElement.innerHTML = 'Assistant: ';
+    elements.responseArea.appendChild(responseElement);
+    
+    // Scroll to show the new response
+    elements.responseArea.scrollTop = elements.responseArea.scrollHeight;
+    
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let fullResponse = '';
     
-    // Clear the response area before streaming
-    elements.responseArea.innerHTML = '<div class="streaming-response"></div>';
-    const streamingElement = elements.responseArea.querySelector('.streaming-response');
-    
-    // Process the stream
     while (true) {
       const { done, value } = await reader.read();
       
@@ -272,27 +272,18 @@ async function streamResponse(requestBody) {
         break;
       }
       
-      // Decode the chunk
       const chunk = decoder.decode(value, { stream: true });
-      console.log('Received chunk:', chunk);
-      
-      // Process each line in the chunk (each line is a JSON object)
       const lines = chunk.split('\n').filter(line => line.trim());
       
       for (const line of lines) {
         try {
           const jsonResponse = JSON.parse(line);
-          console.log('Parsed response:', jsonResponse);
           
-          // Extract the response text from the message
-          if (jsonResponse.message?.content) {
-            fullResponse += jsonResponse.message.content;
-            streamingElement.textContent = fullResponse;
-          }
-          
-          // If this is the final response, we can add additional info
-          if (jsonResponse.done) {
-            console.log('Generation complete:', jsonResponse);
+          if (jsonResponse.response) {
+            fullResponse += jsonResponse.response;
+            responseElement.textContent = 'Assistant: ' + fullResponse;
+            // Keep scrolling to bottom as new content arrives
+            elements.responseArea.scrollTop = elements.responseArea.scrollHeight;
           }
         } catch (e) {
           console.error('Error parsing JSON from stream:', e, line);
@@ -300,7 +291,6 @@ async function streamResponse(requestBody) {
       }
     }
   } catch (error) {
-    console.error('Error in streamResponse:', error);
     throw error;
   }
 }

@@ -96,6 +96,8 @@
         white-space: pre-wrap;
         font-family: monospace;
         line-height: 1.5;
+        overflow-y: auto;
+        scroll-behavior: smooth;
       }
       .streaming-response {
         white-space: pre-wrap;
@@ -153,30 +155,36 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
+      .model-selector {
+        text-align: center;
+        margin: 10px 0 20px 0;
+      }
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <h1>Ollama Model Interface</h1>
       
-      <textarea id="userInput" placeholder="Enter your prompt here..."></textarea>
-      
-      <div class="controls">
+      <div class="model-selector">
         <select id="modelSelect">
           <option value="llama2">llama2</option>
         </select>
-        <button id="sendButton">Send</button>
-        <button id="clearButton" class="clear-btn">Clear</button>
+        <div id="status-indicator" class="status-indicator">Checking connection...</div>
       </div>
       
-      <div class="response-container" id="response-container">
-        <div class="response-header">
-          <h3>Response</h3>
-          <div id="status-indicator" class="status-indicator">Checking connection...</div>
-        </div>
-        <div class="response" id="responseArea">
-          <p>Response will appear here...</p>
-        </div>
+      <div id="responseArea" class="response">
+        <p>Response will appear here...</p>
+      </div>
+      
+      <textarea id="userInput" placeholder="Enter your prompt here..."></textarea>
+      
+      <div class="controls">
+        <button id="sendButton">Send</button>
+        <button id="clearButton" class="clear-btn">Clear</button>
       </div>
       
       <h2>Task-Specific Applications</h2>
