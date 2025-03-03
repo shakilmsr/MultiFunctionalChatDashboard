@@ -1,1 +1,1 @@
-# Multi Functional Dashboard
+# Multi Functional Chat Dashboard
